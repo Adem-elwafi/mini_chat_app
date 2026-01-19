@@ -11,6 +11,8 @@ if (!isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Socket.IO client -->
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <title>MiniChatApp - Chat</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -476,109 +478,146 @@ if (!isset($_SESSION['user_id'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Chat app functionality
         const chatApp = {
             currentChatUserId: null,
-            
+            currentChatId: null,
+            socket: null,
+
             init: function() {
                 console.log('Chat app initializing...');
-                
-                // Initialize user info from localStorage
+
                 try {
                     const user = JSON.parse(localStorage.getItem('user'));
                     if (user) {
-                        console.log('User found in localStorage:', user);
                         document.getElementById('userName').textContent = user.username || 'User';
                         document.getElementById('userEmail').textContent = user.email || 'user@example.com';
                         document.getElementById('userAvatar').textContent = (user.username || 'U').charAt(0).toUpperCase();
-                    } else {
-                        console.log('No user found in localStorage, using default');
-                        // Create a default user if none exists
-                        const defaultUser = {
-                            username: "John Doe",
-                            email: "john@example.com"
-                        };
-                        localStorage.setItem('user', JSON.stringify(defaultUser));
-                        document.getElementById('userName').textContent = defaultUser.username;
-                        document.getElementById('userEmail').textContent = defaultUser.email;
-                        document.getElementById('userAvatar').textContent = defaultUser.username.charAt(0).toUpperCase();
                     }
                 } catch (error) {
                     console.error('Error loading user from localStorage:', error);
                 }
-                
-                // Set up event listeners
+
+                this.fetchUsers();
+                this.connectWebSocket();
                 this.setupEventListeners();
-                
-                // Add to global scope
+
                 window.chatApp = this;
-                
                 console.log('Chat app initialized successfully');
             },
-            
+
+            fetchUsers: async function() {
+                try {
+                    const response = await fetch('../backend/chat/fetch_users.php', {
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const payload = await response.json();
+                    const users = Array.isArray(payload) ? payload : payload.users;
+                    if (!Array.isArray(users)) throw new Error('Unexpected users payload');
+
+                    const usersList = document.getElementById('usersList');
+                    usersList.innerHTML = '';
+
+                    users.forEach((user) => {
+                        const item = document.createElement('div');
+                        item.className = 'user-item';
+                        item.dataset.userId = user.id;
+                        item.innerHTML = `
+                            <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="fw-bold">${user.username}</div>
+                                <small class="text-muted">Offline</small>
+                            </div>
+                            <div class="user-status offline"></div>
+                        `;
+                        usersList.appendChild(item);
+                    });
+                } catch (err) {
+                    console.error('Failed to load users:', err);
+                }
+            },
+
+            connectWebSocket: async function() {
+                try {
+                    console.log('Attempting to fetch WebSocket token...');
+                    
+                    const res = await fetch('../backend/auth/get_ws_token.php', {
+                        credentials: 'same-origin'
+                    });
+
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        console.error(`Token fetch failed with status ${res.status}:`, errorText);
+                        throw new Error(`HTTP ${res.status}: Cannot get websocket token`);
+                    }
+
+                    const raw = await res.text();
+                    console.log('Token response received:', raw.substring(0, 50) + '...');
+                    
+                    let token;
+                    try {
+                        const data = JSON.parse(raw);
+                        token = data.token;
+                        if (!token) {
+                            throw new Error('Token field is missing in response');
+                        }
+                    } catch (parseErr) {
+                        console.error('Failed to parse token response as JSON:', raw);
+                        throw parseErr;
+                    }
+
+                    console.log('Token obtained successfully, connecting to socket.io...');
+
+                    this.socket = io('http://localhost:3000', {
+                        auth: { token },
+                        reconnection: true,
+                        reconnectionAttempts: 5
+                    });
+
+                    this.socket.on('connect', () => {
+                        console.log('✓ WebSocket connected! Socket ID:', this.socket.id);
+                    });
+
+                    this.socket.on('disconnect', () => {
+                        console.warn('⚠ WebSocket disconnected');
+                    });
+
+                    this.socket.on('connect_error', (err) => {
+                        console.error('✗ WebSocket connection error:', err.message);
+                    });
+
+                    this.socket.on('chat message', (data) => {
+                        if (this.currentChatId === data.chatId) {
+                            this.displayMessage(data.senderId, data.message, data.timestamp, 'received');
+                        }
+                    });
+                } catch (err) {
+                    console.error('✗ WebSocket initialization failed:', err.message);
+                    console.error('Full error:', err);
+                    // Don't crash the entire app if WebSocket fails
+                    this.socket = null;
+                }
+            },
+
             setupEventListeners: function() {
                 console.log('Setting up event listeners...');
-                
-                // User selection
-                const userItems = document.querySelectorAll('.user-item');
-                console.log('Found user items:', userItems.length);
-                
-                userItems.forEach((item) => {
-                    item.addEventListener('click', (event) => {
-                        const userId = item.getAttribute('data-user-id');
-                        console.log('User clicked:', userId);
-                        this.selectUser(userId, item);
-                    });
-                });
-                
-                // Logout button
+
                 const logoutBtn = document.getElementById('logoutBtn');
                 if (logoutBtn) {
-                    logoutBtn.addEventListener('click', async () => {
-                        if (!confirm('Are you sure you want to logout?')) {
-                            return;
-                        }
-
-                        try {
-                            // Call PHP logout to destroy the session on server
-                            const response = await fetch('../backend/auth/logout.php', {
-                                method: 'POST',
-                                headers: {
-                                    'Accept': 'application/json'
-                                },
-                                credentials: 'same-origin'
-                            });
-
-                            if (!response.ok) {
-                                throw new Error('Network error during logout');
-                            }
-
-                            const data = await response.json();
-                            if (data && data.success) {
-                                // Optionally clear local storage copy
-                                localStorage.removeItem('user');
-                                // Redirect to login/index page
-                                window.location.href = 'index.php';
-                            } else {
-                                throw new Error(data?.message || 'Logout failed');
-                            }
-                        } catch (err) {
-                            console.error('Logout failed:', err);
-                            alert('Logout failed. Please try again.');
-                        }
+                    logoutBtn.addEventListener('click', () => {
+                        window.location.href = '../backend/auth/logout.php';
                     });
                 }
-                
-                // Profile button
+
                 const profileBtn = document.getElementById('profileBtn');
                 if (profileBtn) {
                     profileBtn.addEventListener('click', () => {
-                        // Navigate to the server-rendered profile page (session-protected)
                         window.location.href = 'profile.php';
                     });
                 }
-                
-                // Message form submission
+
                 const messageForm = document.getElementById('messageForm');
                 if (messageForm) {
                     messageForm.addEventListener('submit', (e) => {
@@ -586,217 +625,248 @@ if (!isset($_SESSION['user_id'])) {
                         this.sendMessage();
                     });
                 }
-                
+
+                const usersList = document.getElementById('usersList');
+                if (usersList) {
+                    console.log('✓ usersList element found, adding click listener');
+                    usersList.addEventListener('click', (event) => {
+                        console.log('Click detected on usersList, target:', event.target);
+                        const userItem = event.target.closest('.user-item');
+                        console.log('Closest user-item:', userItem);
+                        if (!userItem) {
+                            console.log('No user-item found, ignoring click');
+                            return;
+                        }
+
+                        const userId = userItem.dataset.userId;
+                        console.log('✓ User clicked via delegation, userId:', userId, 'type:', typeof userId);
+                        this.selectUser(userId, userItem);
+                    });
+                } else {
+                    console.error('✗ usersList element NOT found!');
+                }
+
                 console.log('Event listeners setup complete');
             },
-            
-            selectUser: function(userId, userElement) {
-                console.log('Selecting user:', userId);
+
+            selectUser: async function(userId, userElement) {
+                console.log('[selectUser] START - userId:', userId, 'userElement:', userElement);
                 
-                // Remove active class from all users
-                const userItems = document.querySelectorAll('.user-item');
-                userItems.forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                // Add active class to selected user
-                if (userElement) {
-                    userElement.classList.add('active');
+                if (!userElement) {
+                    console.log('[selectUser] userElement not provided, searching for it...');
+                    userElement = document.querySelector(`.user-item[data-user-id="${userId}"]`);
+                    console.log('[selectUser] Found userElement:', userElement);
                 }
+
+                document.querySelectorAll('.user-item').forEach((item) => item.classList.remove('active'));
+                if (userElement) userElement.classList.add('active');
+
+                const userName = userElement?.querySelector('.fw-bold')?.textContent || 'Unknown User';
+                const userStatus = userElement?.querySelector('.text-muted')?.textContent || '';
+                const userAvatar = userElement?.querySelector('.user-avatar')?.textContent || '?';
+
+                console.log('[selectUser] User info extracted:', { userName, userStatus, userAvatar });
+
+                const defaultHeader = document.getElementById('defaultHeader');
+                const selectedUserInfo = document.getElementById('selectedUserInfo');
+                console.log('[selectUser] Headers found:', { defaultHeader, selectedUserInfo });
                 
-                // Get user info from the clicked element
-                const userName = userElement.querySelector('.fw-bold').textContent;
-                const userStatus = userElement.querySelector('.text-muted').textContent;
-                const userAvatar = userElement.querySelector('.user-avatar').textContent;
+                if (defaultHeader) defaultHeader.style.display = 'none';
+                if (selectedUserInfo) selectedUserInfo.style.display = 'flex';
                 
-                console.log('User info:', { userName, userStatus, userAvatar });
-                
-                // Update chat header
-                document.getElementById('defaultHeader').style.display = 'none';
-                document.getElementById('selectedUserInfo').style.display = 'flex';
                 document.getElementById('selectedUserName').textContent = userName;
                 document.getElementById('selectedUserStatus').textContent = userStatus;
                 document.getElementById('selectedUserAvatar').textContent = userAvatar;
-                
-                // Hide empty state and clear previous messages
-                document.getElementById('emptyState').style.display = 'none';
-                
-                // Clear previous conversation
+
+                const emptyState = document.getElementById('emptyState');
                 const conversationMessages = document.getElementById('conversationMessages');
-                conversationMessages.innerHTML = '';
-                conversationMessages.style.display = 'block';
+                console.log('[selectUser] Message containers found:', { emptyState, conversationMessages });
                 
-                // Load conversation for this user
-                this.loadConversation(userId, userName);
-                
-                // Show message input
-                this.showMessageInput();
-                
-                // Set current chat user ID
-                this.currentChatUserId = userId;
-                
-                console.log('User selection complete');
-            },
-            
-            loadConversation: function(userId, userName) {
-                console.log('Loading conversation for user:', userId);
-                
-                const conversationMessages = document.getElementById('conversationMessages');
-                
-                // Sample conversation data based on user
-                const sampleMessages = {
-                    '1': [
-                        { type: 'received', text: 'Hi there! This is your own account.', time: '10:00 AM' },
-                        { type: 'sent', text: 'Yes, this is a chat with yourself for testing.', time: '10:02 AM' }
-                    ],
-                    '2': [
-                        { type: 'received', text: 'Hi! How are you doing today?', time: '09:30 AM' },
-                        { type: 'sent', text: "I'm doing great, thanks! Just working on a new project.", time: '09:32 AM' },
-                        { type: 'received', text: 'That sounds interesting. What kind of project?', time: '09:35 AM' },
-                        { type: 'sent', text: "It's a chat application with a responsive design using Bootstrap.", time: '09:37 AM' }
-                    ],
-                    '3': [
-                        { type: 'received', text: 'Hey! Are we still meeting tomorrow?', time: 'Yesterday' },
-                        { type: 'sent', text: 'Yes, 2 PM at the usual place.', time: 'Yesterday' }
-                    ],
-                    '4': [
-                        { type: 'sent', text: 'Can you send me the project files?', time: '2 days ago' },
-                        { type: 'received', text: 'Sure, I\'ll email them to you shortly.', time: '2 days ago' }
-                    ],
-                    '5': [
-                        { type: 'received', text: 'Thanks for your help with the presentation!', time: '3 days ago' },
-                        { type: 'sent', text: 'No problem, happy to help!', time: '3 days ago' }
-                    ]
-                };
-                
-                // Get messages for this user or use default
-                const messages = sampleMessages[userId] || [
-                    { type: 'received', text: 'Hello! This is the start of your conversation.', time: 'Just now' }
-                ];
-                
-                // Add messages to conversation
-                messages.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `message ${msg.type}`;
-                    
-                    messageDiv.innerHTML = `
-                        <div class="message-content">
-                            <div class="message-text">${msg.text}</div>
-                            <div class="message-time">${msg.time}</div>
-                        </div>
-                    `;
-                    
-                    conversationMessages.appendChild(messageDiv);
-                });
-                
-                // Scroll to bottom
-                this.scrollToBottom();
-                
-                console.log('Conversation loaded with', messages.length, 'messages');
-            },
-            
-            showMessageInput: function() {
-                const messageInput = document.getElementById('messageInput');
-                if (messageInput) {
-                    messageInput.style.display = 'block';
+                if (emptyState) emptyState.style.display = 'none';
+                if (conversationMessages) {
+                    conversationMessages.innerHTML = '';
+                    conversationMessages.style.display = 'block';
                 }
-            },
-            
-            hideMessageInput: function() {
-                const messageInput = document.getElementById('messageInput');
-                if (messageInput) {
-                    messageInput.style.display = 'none';
-                }
-            },
-            
-            sendMessage: function() {
-                const messageInput = document.getElementById('messageText');
-                const messageText = messageInput.value.trim();
+
+                console.log('[selectUser] Getting or creating chat for user', userId);
+
+                const chatId = await this.getOrCreateChat(userId);
+                console.log('[selectUser] Chat ID received:', chatId);
                 
-                if (messageText === '') {
-                    console.log('Message is empty, not sending');
+                if (!chatId) {
+                    console.error('[selectUser] No chatId returned, aborting');
                     return;
                 }
-                
-                console.log('Sending message:', messageText);
-                
-                // Create new message element
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message sent';
-                
-                const now = new Date();
-                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                                 now.getMinutes().toString().padStart(2, '0');
-                
-                messageDiv.innerHTML = `
-                    <div class="message-content">
-                        <div class="message-text">${messageText}</div>
-                        <div class="message-time">${timeString}</div>
-                    </div>
-                `;
-                
-                // Add to conversation
-                const conversationMessages = document.getElementById('conversationMessages');
-                if (conversationMessages) {
-                    conversationMessages.appendChild(messageDiv);
+
+                this.currentChatId = chatId;
+                this.currentChatUserId = userId;
+                console.log('[selectUser] Current chat set:', { chatId, userId });
+
+                if (this.socket?.connected) {
+                    console.log('[selectUser] Emitting join chat event for chatId:', chatId);
+                    this.socket.emit('join chat', chatId);
+                } else {
+                    console.warn('[selectUser] Socket not connected, cannot join chat room');
                 }
-                
-                // Clear input
-                messageInput.value = '';
-                messageInput.focus();
-                
-                // Scroll to bottom
-                this.scrollToBottom();
-                
-                // Simulate a reply after a short delay (only if not chatting with yourself)
-                if (this.currentChatUserId !== '1') {
-                    setTimeout(() => {
-                        this.simulateReply();
-                    }, 1000);
+
+                await this.loadConversation(chatId);
+                console.log('[selectUser] Conversation loaded, showing message input...');
+                this.showMessageInput();
+                console.log('[selectUser] COMPLETE');
+            },
+
+            getOrCreateChat: async function(otherUserId) {
+                console.log('[getOrCreateChat] START - otherUserId:', otherUserId);
+                try {
+                    const requestBody = { user_id: otherUserId };
+                    console.log('[getOrCreateChat] Sending request:', requestBody);
+                    
+                    const res = await fetch('../backend/chat/start_chat.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    console.log('[getOrCreateChat] Response status:', res.status, res.statusText);
+
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        console.error('[getOrCreateChat] Response not OK:', errorText);
+                        throw new Error('Failed to start/get chat');
+                    }
+
+                    const responseText = await res.text();
+                    console.log('[getOrCreateChat] Response text:', responseText);
+                    
+                    const data = JSON.parse(responseText);
+                    console.log('[getOrCreateChat] Parsed data:', data);
+                    console.log('[getOrCreateChat] Returning chat_id:', data.chat_id);
+                    
+                    return data.chat_id;
+                } catch (err) {
+                    console.error('[getOrCreateChat] ERROR:', err);
+                    console.error('[getOrCreateChat] Full error details:', err.message, err.stack);
+                    return null;
                 }
             },
-            
-            simulateReply: function() {
-                console.log('Simulating reply...');
-                
-                const replies = [
-                    "Thanks for your message!",
-                    "That's interesting, tell me more.",
-                    "I'll think about that and get back to you.",
-                    "Sounds good to me!",
-                    "Let's discuss this tomorrow.",
-                    "Got it, thanks!",
-                    "I agree with you on that.",
-                    "Can we talk about this later?"
-                ];
-                
-                const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                
-                // Create reply message element
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message received';
-                
-                const now = new Date();
-                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                                 now.getMinutes().toString().padStart(2, '0');
-                
-                messageDiv.innerHTML = `
+
+            loadConversation: async function(chatId) {
+                console.log('[loadConversation] START - chatId:', chatId);
+                try {
+                    const res = await fetch(`../backend/chat/fetch_messages.php?chat_id=${chatId}`, {
+                        credentials: 'same-origin'
+                    });
+
+                    console.log('[loadConversation] Response status:', res.status);
+
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        console.error('[loadConversation] Response not OK:', errorText);
+                        throw new Error('Cannot load messages');
+                    }
+
+                    const data = await res.json();
+                    console.log('[loadConversation] Data received:', data);
+                    
+                    // Extract messages array from response
+                    const messages = data.messages || data || [];
+                    console.log('[loadConversation] Messages array:', messages, 'length:', messages.length);
+                    
+                    if (!Array.isArray(messages)) {
+                        console.error('[loadConversation] Messages is not an array:', typeof messages);
+                        throw new Error('Invalid messages format');
+                    }
+
+                    const container = document.getElementById('conversationMessages');
+                    container.innerHTML = '';
+
+                    const currentUserId = JSON.parse(localStorage.getItem('user'))?.id;
+                    console.log('[loadConversation] Current user ID:', currentUserId);
+
+                    messages.forEach((msg) => {
+                        const isSent = msg.sender_id == currentUserId;
+                        console.log('[loadConversation] Displaying message:', msg.id, 'from:', msg.sender_id, 'isSent:', isSent);
+                        this.displayMessage(msg.sender_id, msg.content, msg.timestamp, isSent ? 'sent' : 'received');
+                    });
+
+                    this.scrollToBottom();
+                    console.log('[loadConversation] COMPLETE - displayed', messages.length, 'messages');
+                } catch (err) {
+                    console.error('[loadConversation] ERROR:', err);
+                    console.error('[loadConversation] Full error:', err.message, err.stack);
+                }
+            },
+
+            sendMessage: async function() {
+                const input = document.getElementById('messageText');
+                const text = input.value.trim();
+
+                if (!text || !this.currentChatId) return;
+
+                const user = JSON.parse(localStorage.getItem('user'));
+                const senderId = user?.id;
+
+                try {
+                    const res = await fetch('../backend/chat/send_message.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            chat_id: this.currentChatId,
+                            content: text
+                        })
+                    });
+
+                    if (!res.ok) throw new Error('Failed to save message');
+
+                    this.displayMessage(senderId, text, new Date().toISOString(), 'sent');
+
+                    if (this.socket?.connected) {
+                        this.socket.emit('chat message', {
+                            chatId: this.currentChatId,
+                            message: text
+                        });
+                    }
+
+                    input.value = '';
+                    input.focus();
+                    this.scrollToBottom();
+                } catch (err) {
+                    console.error('Send message failed:', err);
+                    alert('Could not send message. Try again.');
+                }
+            },
+
+            displayMessage: function(senderId, text, timestamp, type) {
+                const container = document.getElementById('conversationMessages');
+
+                const div = document.createElement('div');
+                div.className = `message ${type}`;
+
+                const time = new Date(timestamp).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                div.innerHTML = `
                     <div class="message-content">
-                        <div class="message-text">${randomReply}</div>
-                        <div class="message-time">${timeString}</div>
+                        <div class="message-text">${text}</div>
+                        <div class="message-time">${time}</div>
                     </div>
                 `;
-                
-                // Add to conversation
-                const conversationMessages = document.getElementById('conversationMessages');
-                if (conversationMessages) {
-                    conversationMessages.appendChild(messageDiv);
-                }
-                
-                // Scroll to bottom
+
+                container.appendChild(div);
                 this.scrollToBottom();
             },
-            
+
+            showMessageInput: function() {
+                const inputArea = document.getElementById('messageInput');
+                if (inputArea) {
+                    inputArea.style.display = 'block';
+                }
+            },
+
             scrollToBottom: function() {
                 const container = document.getElementById('messagesContainer');
                 if (container) {
@@ -804,10 +874,9 @@ if (!isset($_SESSION['user_id'])) {
                 }
             }
         };
-        
-        // Initialize the chat app when DOM is loaded
+
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing chat app...');
+            console.log('DOM loaded → initializing chat');
             chatApp.init();
         });
     </script>

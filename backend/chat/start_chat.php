@@ -59,7 +59,11 @@ try {
     $stmt->execute([$chat_id]);
     $chat = $stmt->fetch();
     
-    jsonResponse(['success' => true, 'chat' => $chat]);
+    jsonResponse([
+        'success' => true, 
+        'chat_id' => $chat_id,
+        'chat' => $chat
+    ]);
     
 } catch (PDOException $e) {
     jsonResponse(['error' => 'Database error: ' . $e->getMessage()], 500);
