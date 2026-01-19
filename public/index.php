@@ -1,11 +1,11 @@
-<?php
+<?php // la partie php qui vèrifie si l'utilisateur dèja cnct ou nn : 
 session_start();
 if (isset($_SESSION['user_id'])) {
     header('Location: chat.php');
     exit();
 }
 ?>
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +34,7 @@ if (isset($_SESSION['user_id'])) {
             
             <div class="form-footer">
                 Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
-            </div>
+            </div> 
         </div>
 
         <div class="auth-form" id="registerForm" style="display: none;">
@@ -69,37 +69,38 @@ if (isset($_SESSION['user_id'])) {
     </div>
 
     <script>
+        // page d'Inscription : 
         function showRegister() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
             clearMessages();
         }
-        
+        // page de connexion :
         function showLogin() {
             document.getElementById('registerForm').style.display = 'none';
             document.getElementById('loginForm').style.display = 'block';
             clearMessages();
         }
-        
+        // erreur : connexion èchouè :
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
             document.getElementById('successMessage').style.display = 'none';
         }
-        
+        // coonexion validè : 
         function showSuccess(message) {
             const successDiv = document.getElementById('successMessage');
             successDiv.textContent = message;
             successDiv.style.display = 'block';
             document.getElementById('errorMessage').style.display = 'none';
         }
-        
+        // suppression de messages : 
         function clearMessages() {
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('successMessage').style.display = 'none';
         }
-        
+        // connecter :
         async function login() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
