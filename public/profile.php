@@ -1,22 +1,36 @@
 <?php
 require_once '../backend/config/db.php';
 
-if (!isLoggedIn()) {
+// Check if user is logged in - session is already started by db.php
+if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit();
 }
 
 $pdo = Database::getInstance();
-$stmt = $pdo->prepare('SELECT id, username, email, profile_info, created_at FROM users WHERE id = ?');
-$stmt->execute([getUserID()]);
-$user = $stmt->fetch();
 
-if (!$user) {
-    header('Location: ../backend/auth/logout.php');
-    exit();
+// Get user ID from session
+$user_id = $_SESSION['user_id'];
+
+try {
+    $stmt = $pdo->prepare('SELECT id, username, email, profile_info, created_at FROM users WHERE id = ?');
+    $stmt->execute([$user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user) {
+        // User not found in database
+        session_destroy();
+        header('Location: index.php');
+        exit();
+    }
+    
+    $joinDate = $user['created_at'] ? date('M d, Y', strtotime($user['created_at'])) : 'Unknown date';
+    
+} catch (PDOException $e) {
+    // Database error
+    error_log("Database error in profile.php: " . $e->getMessage());
+    die("Database error. Please try again later.");
 }
-
-$joinDate = $user['created_at'] ? date('M d, Y', strtotime($user['created_at'])) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,43 +46,43 @@ $joinDate = $user['created_at'] ? date('M d, Y', strtotime($user['created_at']))
 </head>
 <body>
     <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="bi bi-chat-dots-fill" aria-hidden="true"></i>
-                    <span>MiniChatApp</span>
-                </div>
-            </div>
-
-            <ul class="nav-menu">
-                <li>
-                    <a href="chat.php">
-                        <i class="bi bi-house-door" aria-hidden="true"></i>
-                        <span>Chat</span>
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="profile.php">
-                        <i class="bi bi-person-circle" aria-hidden="true"></i>
-                        <span>Profile</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="../backend/auth/logout.php">
-                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
-
-            <div class="sidebar-footer">
-                <div class="user-mini-profile">
-                    <div class="user-avatar-mini" data-avatar-initial><?= htmlspecialchars(strtoupper(substr($user['username'], 0, 1))) ?></div>
-                    <div class="user-info-mini">
-                        <span id="miniName"><?= htmlspecialchars($user['username']) ?></span>
-                        <small id="miniEmail"><?= htmlspecialchars($user['email']) ?></small>
+        <aside class="users-sidebar">
+            <div class="user-header">
+                <div class="current-user">
+                    <div class="avatar" data-avatar-initial>
+                        <?= htmlspecialchars(strtoupper(substr($user['username'], 0, 1))) ?>
+                    </div>
+                    <div class="user-info">
+                        <h3 id="miniName"><?= htmlspecialchars($user['username']) ?></h3>
+                        <div class="email" id="miniEmail"><?= htmlspecialchars($user['email']) ?></div>
                     </div>
                 </div>
+            </div>
+            
+            <div class="users-nav">
+                <a href="chat.php" class="nav-item">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <div class="nav-text">
+                        <div>Chat</div>
+                        <small class="text-muted">Real-time messaging</small>
+                    </div>
+                </a>
+                <a href="profile.php" class="nav-item active">
+                    <i class="bi bi-person-circle"></i>
+                    <div class="nav-text">
+                        <div>Profile</div>
+                        <small class="text-muted">Manage your account</small>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="btn btn-profile" onclick="window.location.href='profile.php'">
+                    <i class="bi bi-person-circle me-2"></i>My Profile
+                </button>
+                <button class="btn btn-logout" onclick="window.location.href='../backend/auth/logout.php'">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </button>
             </div>
         </aside>
 
@@ -156,5 +170,14 @@ $joinDate = $user['created_at'] ? date('M d, Y', strtotime($user['created_at']))
         window.profileUser = <?= json_encode($user, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     </script>
     <script src="js/profile.js"></script>
+    
+    <!-- Mobile sidebar elements -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-back-btn" id="mobileBackBtn">
+        <i class="bi bi-arrow-left"></i>
+    </div>
 </body>
 </html>
