@@ -19,9 +19,31 @@ if (!isset($_SESSION['user_id'])) {
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="./css/chat.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">MiniChatApp</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="chat.php">Chat</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.php">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutNav">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
     <div class="container-fluid p-0 chat-container">
         <div class="row g-0 h-100">
             <!-- Liste des utilisateurs --> 
@@ -83,15 +105,6 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                         <div class="user-status offline"></div>
                     </div>
-                </div>
-                
-                <div class="sidebar-footer">
-                    <button class="btn btn-profile" id="profileBtn">
-                        <i class="bi bi-person-circle me-2"></i>My Profile
-                    </button>
-                    <button class="btn btn-logout" id="logoutBtn">
-                        <i class="bi bi-box-arrow-right me-2"></i>Logout
-                    </button>
                 </div>
             </div>
             
@@ -166,7 +179,9 @@ if (!isset($_SESSION['user_id'])) {
                 this.fetchUsers();
                 this.connectWebSocket();
                 this.setupEventListeners();
-                this.setupResponsiveUI(); // Add this line
+                this.setupResponsiveUI();
+                this.applyResponsiveSidebarLayout();
+                this.openSidebar(); // Start with sidebar open on all sizes
 
                 window.chatApp = this;
                 console.log('Chat app initialized successfully');
@@ -263,14 +278,13 @@ if (!isset($_SESSION['user_id'])) {
                 if (!sidebar) return;
 
                 if (this.isMobileViewport()) {
-                    sidebar.classList.remove('active');
+                    // On mobile, ensure overlay is handled, but don't force close/open
                     if (overlay) overlay.classList.remove('active');
                     if (toggleBtn) toggleBtn.classList.remove('sidebar-open');
                     if (toggleIcon) toggleIcon.className = 'bi bi-chevron-right';
                 } else {
-                    sidebar.classList.add('active');
+                    // On desktop, no forced active—let toggle control it
                     if (overlay) overlay.classList.remove('active');
-                    if (toggleBtn) toggleBtn.classList.remove('sidebar-open');
                 }
             },
 
@@ -282,6 +296,7 @@ if (!isset($_SESSION['user_id'])) {
 
                 const sidebarToggle = document.getElementById('sidebarToggle');
                 const sidebarOverlay = document.getElementById('sidebarOverlay');
+                const sidebar = document.querySelector('.users-sidebar');
                 const mobileBackBtn = document.getElementById('mobileBackBtn');
                 const usersList = document.getElementById('usersList');
 
@@ -290,7 +305,19 @@ if (!isset($_SESSION['user_id'])) {
                 }
 
                 if (sidebarOverlay) {
-                    sidebarOverlay.addEventListener('click', () => this.closeSidebar());
+                    sidebarOverlay.addEventListener('click', (e) => {
+                        // Only close if clicking directly on overlay, not on sidebar
+                        if (e.target === sidebarOverlay) {
+                            this.closeSidebar();
+                        }
+                    });
+                }
+
+                // Prevent clicks on sidebar from closing it
+                if (sidebar) {
+                    sidebar.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
                 }
 
                 if (mobileBackBtn) {
@@ -423,9 +450,10 @@ if (!isset($_SESSION['user_id'])) {
             setupEventListeners: function() {
                 console.log('Setting up event listeners...');
 
-                const logoutBtn = document.getElementById('logoutBtn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', async () => {
+                const logoutNav = document.getElementById('logoutNav');
+                if (logoutNav) {
+                    logoutNav.addEventListener('click', async (e) => {
+                        e.preventDefault();
                         try {
                             await fetch('../backend/auth/logout.php', {
                                 credentials: 'same-origin'
@@ -434,13 +462,6 @@ if (!isset($_SESSION['user_id'])) {
                             console.error('Logout request failed:', err);
                         }
                         window.location.href = 'index.php';
-                    });
-                }
-
-                const profileBtn = document.getElementById('profileBtn');
-                if (profileBtn) {
-                    profileBtn.addEventListener('click', () => {
-                        window.location.href = 'profile.php';
                     });
                 }
 
