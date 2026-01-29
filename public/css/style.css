@@ -1,17 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-    --bg: #0b1220;
-    --panel: rgba(255, 255, 255, 0.04);
-    --panel-hover: rgba(255, 255, 255, 0.06);
-    --text: #e5e7eb;
-    --muted: #94a3b8;
-    --accent: #22d3ee;
-    --accent-strong: #06b6d4;
-    --accent-subtle: rgba(34, 211, 238, 0.15);
-    --border: rgba(255, 255, 255, 0.08);
-    --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-    --shadow-lg: 0 32px 72px rgba(0, 0, 0, 0.6);
+    /* Pink Millennial Aesthetic - Dark Mode */
+    --bg: #0f0a12;
+    --panel: rgba(40, 25, 45, 0.65);
+    --panel-hover: rgba(50, 30, 55, 0.75);
+    --text: #f9e0e8;
+    --muted: #c78aa8;
+    --accent: #ff79c6;
+    --accent-strong: #ff4d94;
+    --accent-soft: #ff8dc7;
+    --accent-subtle: rgba(255, 121, 198, 0.15);
+    --border: rgba(255, 121, 198, 0.15);
+    --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 32px 72px rgba(0, 0, 0, 0.65);
+    --pink-glow: rgba(255, 105, 180, 0.35);
+    --pink-glow-soft: rgba(255, 182, 193, 0.25);
+    --text-muted-pink: #e8c1d1;
+    --success: #aaffa0;
+    --danger: #ff9aa2;
     --sidebar-width: 340px;
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
@@ -25,9 +32,9 @@ body {
     margin: 0;
     min-height: 100vh;
     font-family: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.12), transparent 35%),
-        radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.12), transparent 30%),
-        linear-gradient(145deg, #0f172a 0%, #0b1220 55%, #0b0f1a 100%);
+    background: radial-gradient(circle at 20% 20%, rgba(255, 121, 198, 0.08), transparent 35%),
+        radial-gradient(circle at 80% 0%, rgba(255, 79, 148, 0.06), transparent 30%),
+        linear-gradient(145deg, #0f0a12 0%, #1a0f18 55%, #0d0609 100%);
     color: var(--text);
     overflow-x: hidden;
 }
@@ -53,7 +60,7 @@ body:has(.auth-container) {
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 32px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 24px 60px var(--pink-glow);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     position: relative;
@@ -74,7 +81,7 @@ body:has(.auth-container) {
 .container.auth-container::before {
     width: 240px;
     height: 240px;
-    background: rgba(34, 211, 238, 0.2);
+    background: rgba(255, 121, 198, 0.15);
     top: -70px;
     right: -90px;
 }
@@ -82,7 +89,7 @@ body:has(.auth-container) {
 .container.auth-container::after {
     width: 200px;
     height: 200px;
-    background: rgba(14, 165, 233, 0.2);
+    background: rgba(255, 79, 148, 0.12);
     bottom: -80px;
     left: -70px;
 }
@@ -119,7 +126,7 @@ textarea {
     padding: 12px 14px;
     border-radius: 12px;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 121, 198, 0.06);
     color: var(--text);
     font-size: 15px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -129,7 +136,7 @@ input:focus,
 textarea:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
+    box-shadow: 0 0 0 3px rgba(255, 121, 198, 0.25);
     transform: translateY(-1px);
 }
 
@@ -144,23 +151,23 @@ textarea {
     padding: 12px 16px;
     border-radius: 12px;
     background: linear-gradient(120deg, var(--accent-strong), var(--accent));
-    color: #0b1220;
+    color: #fff;
     font-weight: 700;
     font-size: 15px;
     letter-spacing: 0.2px;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.2s ease;
-    box-shadow: 0 16px 30px rgba(6, 182, 212, 0.28);
+    box-shadow: 0 16px 30px var(--pink-glow);
 }
 
 .btn:hover {
     transform: translateY(-1.5px);
-    box-shadow: 0 20px 36px rgba(6, 182, 212, 0.34);
+    box-shadow: 0 20px 42px rgba(255, 79, 148, 0.4);
 }
 
 .btn:active {
     transform: translateY(0);
-    box-shadow: 0 12px 20px rgba(6, 182, 212, 0.32);
+    box-shadow: 0 12px 24px var(--pink-glow);
 }
 
 .form-footer {
@@ -239,7 +246,7 @@ textarea {
 .navbar {
     background: var(--panel) !important;
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 24px rgba(255, 79, 148, 0.15);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     z-index: 1000;
@@ -295,7 +302,7 @@ textarea {
     transform: translateX(0);
     transition: var(--transition-smooth);
     z-index: 1001;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    box-shadow: 4px 0 24px rgba(255, 79, 148, 0.2);
 }
 
 .users-sidebar:not(.active) {
@@ -305,7 +312,7 @@ textarea {
 .user-header {
     padding: 22px;
     border-bottom: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 121, 198, 0.06);
     flex-shrink: 0;
 }
 
@@ -321,14 +328,14 @@ textarea {
     height: 50px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    color: #0b1220;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 20px;
     flex-shrink: 0;
-    box-shadow: 0 8px 20px rgba(6, 182, 212, 0.35);
+    box-shadow: 0 8px 24px var(--pink-glow);
 }
 
 .user-info h3 {
@@ -367,7 +374,7 @@ textarea {
 }
 
 .user-item:hover {
-    background: var(--panel-hover);
+    background: rgba(255, 121, 198, 0.12);
     transform: translateX(4px);
     border-left-color: var(--accent);
 }
@@ -375,7 +382,7 @@ textarea {
 .user-item.active {
     background: var(--accent-subtle);
     border-left-color: var(--accent);
-    box-shadow: 0 4px 16px rgba(34, 211, 238, 0.2);
+    box-shadow: 0 4px 16px var(--pink-glow-soft);
 }
 
 .user-item .fw-bold {
@@ -387,7 +394,7 @@ textarea {
 
 .user-item .text-muted {
     font-size: 13px;
-    color: #aaaaaa !important;
+    color: var(--muted) !important;
     line-height: 1.4;
 }
 
@@ -402,16 +409,28 @@ textarea {
 }
 
 .user-status.online {
-    background: #ffffff;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
 }
 
 .user-status.offline {
-    background: var(--muted);
+    background: #94a3b8;
+    box-shadow: none;
     opacity: 0.5;
 }
 
 .user-status.away {
-    background: #fbbf24;
+    background: #ffd93d;
+}
+
+.user-item.self-user {
+    opacity: 0.7;
+}
+
+.user-item.self-user .user-status {
+    background: #94a3b8;
+    box-shadow: none;
+    opacity: 0.35;
 }
 
 /* ============================================
@@ -438,13 +457,13 @@ textarea {
     z-index: 1002;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 0px 20px rgba(255, 79, 148, 0.2);
 }
 
 .sidebar-toggle:hover {
     background: var(--accent-subtle);
     width: 46px;
-    border-color: rgba(34, 211, 238, 0.3);
+    border-color: rgba(255, 121, 198, 0.4);
 }
 
 .sidebar-toggle i {
@@ -506,7 +525,7 @@ textarea {
     gap: 16px;
     min-height: 86px;
     flex-shrink: 0;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 12px rgba(255, 79, 148, 0.12);
 }
 
 .chat-header h3 {
@@ -637,18 +656,18 @@ textarea {
 .message.sent .message-content,
 .message.sent .message-bubble {
     background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    color: #0b1220;
+    color: #fff;
     border-bottom-right-radius: 6px;
-    box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4), 0 2px 6px rgba(6, 182, 212, 0.2);
+    box-shadow: 0 6px 20px var(--pink-glow), 0 2px 8px var(--pink-glow-soft);
 }
 
 .message.received .message-content,
 .message.received .message-bubble {
-    background: var(--panel);
+    background: rgba(80, 40, 70, 0.4);
     color: var(--text);
     border-bottom-left-radius: 6px;
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 121, 198, 0.2);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
@@ -669,7 +688,7 @@ textarea {
 }
 
 .message.sent .message-time {
-    color: rgba(11, 18, 32, 0.75);
+    color: rgba(255, 255, 255, 0.8);
     text-align: right;
 }
 
@@ -688,7 +707,7 @@ textarea {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     flex-shrink: 0;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 -2px 12px rgba(255, 79, 148, 0.12);
     position: relative;
 }
 
@@ -700,7 +719,7 @@ textarea {
 #messageText,
 .message-input input[type="text"] {
     flex: 1;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 121, 198, 0.08);
     border: 1px solid var(--border);
     color: var(--text);
     padding: 14px 22px;
@@ -714,8 +733,8 @@ textarea {
 .message-input input[type="text"]:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2), 0 4px 12px rgba(34, 211, 238, 0.15);
-    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(255, 121, 198, 0.25), 0 4px 16px var(--pink-glow);
+    background: rgba(255, 121, 198, 0.12);
     transform: translateY(-1px);
 }
 
@@ -729,7 +748,7 @@ textarea {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 121, 198, 0.1);
     color: var(--text);
     border: 1px solid var(--border);
     display: flex;
@@ -741,8 +760,8 @@ textarea {
 }
 
 .emoji-toggle:hover {
-    background: var(--panel-hover);
-    border-color: rgba(34, 211, 238, 0.35);
+    background: rgba(255, 121, 198, 0.18);
+    border-color: rgba(255, 121, 198, 0.45);
     color: var(--accent);
     transform: translateY(-1px);
 }
@@ -760,10 +779,10 @@ textarea {
     bottom: calc(100% + 12px);
     left: 0;
     width: min(320px, 90vw);
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(15, 10, 18, 0.92);
     border: 1px solid var(--border);
     border-radius: 16px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 16px 48px rgba(255, 79, 148, 0.2);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     padding: 10px;
@@ -795,7 +814,7 @@ textarea {
 }
 
 .emoji-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 121, 198, 0.2);
     transform: scale(1.05);
 }
 
@@ -804,25 +823,25 @@ textarea {
     height: 52px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    color: #0b1220;
+    color: #fff;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: var(--transition-fast);
-    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45);
+    box-shadow: 0 8px 28px var(--pink-glow);
     flex-shrink: 0;
 }
 
 .btn-send:hover {
     transform: scale(1.08) translateY(-2px);
-    box-shadow: 0 12px 32px rgba(6, 182, 212, 0.55);
+    box-shadow: 0 12px 40px rgba(255, 79, 148, 0.45);
 }
 
 .btn-send:active {
     transform: scale(0.96);
-    box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
+    box-shadow: 0 6px 20px var(--pink-glow);
 }
 
 .btn-send i {
@@ -847,7 +866,7 @@ textarea {
     z-index: 1003;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 8px 28px rgba(255, 79, 148, 0.25);
     border: 1px solid;
     animation: slideUpFade 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -864,21 +883,21 @@ textarea {
 }
 
 .connection-status.online {
-    background: rgba(52, 211, 153, 0.2);
-    border-color: rgba(52, 211, 153, 0.5);
-    color: #34d399;
+    background: rgba(170, 255, 160, 0.15);
+    border-color: rgba(170, 255, 160, 0.4);
+    color: #aaffa0;
 }
 
 .connection-status.connecting {
-    background: rgba(251, 191, 36, 0.2);
-    border-color: rgba(251, 191, 36, 0.5);
-    color: #fbbf24;
+    background: rgba(255, 217, 61, 0.15);
+    border-color: rgba(255, 217, 61, 0.4);
+    color: #ffd93d;
 }
 
 .connection-status.offline {
-    background: rgba(248, 113, 113, 0.2);
-    border-color: rgba(248, 113, 113, 0.5);
-    color: #f87171;
+    background: rgba(255, 154, 162, 0.15);
+    border-color: rgba(255, 154, 162, 0.4);
+    color: #ff9aa2;
 }
 
 .connection-status i {
@@ -908,7 +927,7 @@ textarea {
 
 .users-list::-webkit-scrollbar-thumb:hover,
 .messages-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(34, 211, 238, 0.4);
+    background: rgba(255, 121, 198, 0.5);
 }
 
 /* ============================================
@@ -1367,13 +1386,13 @@ textarea {
     padding: 36px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: var(--shadow);
+    box-shadow: 0 24px 60px var(--pink-glow);
     transition: var(--transition-smooth);
 }
 
 .profile-card:hover {
-    border-color: rgba(34, 211, 238, 0.35);
-    box-shadow: 0 28px 64px rgba(34, 211, 238, 0.18);
+    border-color: rgba(255, 121, 198, 0.35);
+    box-shadow: 0 28px 64px rgba(255, 79, 148, 0.2);
     transform: translateY(-2px);
 }
 
@@ -1392,14 +1411,14 @@ textarea {
     height: 84px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    color: #0b1220;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 36px;
     flex-shrink: 0;
-    box-shadow: 0 12px 36px rgba(6, 182, 212, 0.4);
+    box-shadow: 0 12px 40px var(--pink-glow);
 }
 
 .profile-info-header {
@@ -1497,8 +1516,8 @@ textarea {
 .form-textarea {
     padding: 13px 17px;
     border-radius: 13px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 121, 198, 0.2);
+    background: rgba(255, 121, 198, 0.06);
     color: var(--text);
     font-size: 15px;
     font-family: inherit;
@@ -1515,8 +1534,8 @@ textarea {
 .form-textarea:focus {
     outline: none;
     border-color: var(--accent);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+    background: rgba(255, 121, 198, 0.1);
+    box-shadow: 0 0 0 3px rgba(255, 121, 198, 0.25);
     transform: translateY(-1px);
 }
 
@@ -1552,7 +1571,7 @@ textarea {
 
 .btn-primary {
     background: linear-gradient(120deg, var(--accent-strong), var(--accent));
-    color: #0b1220;
+    color: #fff;
     font-weight: 700;
     padding: 13px 36px;
     border: none;
@@ -1561,21 +1580,21 @@ textarea {
     font-size: 15px;
     letter-spacing: 0.3px;
     transition: var(--transition-fast);
-    box-shadow: 0 16px 32px rgba(6, 182, 212, 0.32);
+    box-shadow: 0 16px 36px var(--pink-glow);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 42px rgba(6, 182, 212, 0.4);
+    box-shadow: 0 20px 48px rgba(255, 79, 148, 0.4);
 }
 
 .btn-primary:active {
     transform: translateY(0);
-    box-shadow: 0 12px 26px rgba(6, 182, 212, 0.35);
+    box-shadow: 0 12px 30px var(--pink-glow);
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 121, 198, 0.08);
     color: var(--muted);
     border: 1px solid var(--border);
     padding: 13px 36px;
@@ -1588,7 +1607,7 @@ textarea {
 }
 
 .btn-secondary:hover {
-    background: var(--panel-hover);
+    background: rgba(255, 121, 198, 0.15);
     border-color: var(--accent);
     color: var(--accent);
     transform: translateY(-1px);
@@ -1691,71 +1710,71 @@ textarea {
 }
 
 /* =============================================
-   SUMMARY OF MAJOR IMPROVEMENTS:
+    PINK MILLENNIAL AESTHETIC - COLOR PALETTE UPDATE
    
-   1. Enhanced CSS Variables
-      - Added --panel-hover, --accent-subtle, --shadow-lg
-      - Added --transition-smooth and --transition-fast for consistent animations
-      - Improved sidebar-width responsiveness
+    THEME: Soft Pink / Rose / Millennial Pink - Dark Mode Friendly
    
-   2. Message Bubbles & Spacing
-      - Increased gap between messages from 12px to 18px for better readability
-      - Added subtle tails with asymmetric border-radius (6px on tail corner)
-      - Enhanced shadows and depth with layered box-shadows
-      - Improved message slide-in animation with scale effect
-      - Better distinction between sent (cyan gradient) and received (glass panel) messages
+    PRIMARY COLOR CHANGES:
    
-   3. Sidebar Improvements
-      - Redesigned toggle button: larger (40x64px), better hover effects
-      - Added left accent bar on hover/active user items
-      - Improved transform animations (translateX with 4px shift)
-      - Enhanced backdrop-filter blur from 12px to 16px throughout
-      - Better z-index management for overlay behavior
+    1. CSS Variables Updated
+        - --bg: #0f0a12 (darker, more pinkish black)
+        - --panel: rgba(40, 25, 45, 0.65) (pinkish glass)
+        - --panel-hover: rgba(50, 30, 55, 0.75) (deeper pink glass on hover)
+        - --text: #f9e0e8 (light pinkish white for readability)
+        - --muted: #c78aa8 (muted pink-gray)
+        - --text-muted-pink: #e8c1d1 (secondary muted pink)
+        - --accent: #ff79c6 (vibrant pink)
+        - --accent-strong: #ff4d94 (hot pink)
+        - --accent-soft: #ff8dc7 (softer accent pink)
+        - --accent-subtle: rgba(255, 121, 198, 0.15) (very subtle pink for backgrounds)
+        - --border: rgba(255, 121, 198, 0.15) (pink-tinted borders)
+        - --pink-glow: rgba(255, 105, 180, 0.35) (strong pink glow for shadows)
+        - --pink-glow-soft: rgba(255, 182, 193, 0.25) (softer pink glow)
+        - --success: #aaffa0 (soft mint green for online status)
+        - --danger: #ff9aa2 (soft coral red for offline)
    
-   4. Message Input Area
-      - Pill-shaped input with 28px border-radius
-      - Larger, more prominent send button (52x52px)
-      - Enhanced focus states with larger shadows and glow effects
-      - Improved hover/active animations with scale transforms
+    2. Component-Specific Updates
+        - Background: Added soft pink/purple radial gradients (subtle, mostly dark)
+        - Auth Container: Pink-themed glassmorphism with pink glow shadows
+        - Send Messages: Pink gradient (135deg, #ff4d94 → #ff79c6), white text, strong pink shadows
+        - Received Messages: Pink-tinted glass (rgba(80, 40, 70, 0.4)), light pink borders
+        - Sidebar: Pink left borders on hover/active, pink user header background
+        - Buttons (all): Pink gradient with white text and pink glows
+        - Input Fields: Pink-tinted backgrounds with pink focus states
+        - Emoji Picker: Pink-themed with pink hover backgrounds
+        - Connection Status: Pink/mint for online, softer colors overall
+        - Profile Cards & Avatars: Pink gradients and shadows throughout
    
-   5. Connection Status Toast
-      - Repositioned to bottom-right (32px from edges)
-      - Better visibility with stronger backgrounds (0.2 opacity)
-      - Improved slide-up animation with scale effect
-      - Auto-hide friendly positioning
+    3. Glassmorphism & Depth
+        - All panels: rgba(40, 25, 45, 0.65) base with backdrop-filter: blur(16px)
+        - Stronger shadows: using --pink-glow with higher opacity (0.35)
+        - Pink-tinted drop shadows: 0 X Ypx rgba(255, 79, 148, 0.2-0.4)
+        - Enhanced on hover: increased intensity and pink component
    
-   6. Responsive Breakpoints
-      - Added 1199px breakpoint for large tablets
-      - Completely redesigned mobile (768px) with proper drawer behavior
-      - Enhanced 576px and 400px breakpoints for small devices
-      - Fixed sidebar overlay to cover entire screen on mobile
-      - Proper body scroll locking class support
+    4. Typography
+        - Maintained: Space Grotesk font family
+        - Text colors: #f9e0e8 (primary), #c78aa8 (muted), #e8c1d1 (secondary muted)
+        - Letter-spacing: consistent 0.2-0.5px for elegant feel
+        - Line-height: 1.3-1.5 for readability in message bubbles
    
-   7. Scrollbar Styling
-      - Increased width from 6px to 8px
-      - Added accent color on hover (cyan)
-      - Smoother transitions
+    5. Interactive States
+        - Hover: scale(1.03-1.08) + pink shadow glow
+        - Focus: pink border + larger pink box-shadow + pink background tint
+        - Active: left pink border + pink background + pink glow shadow
    
-   8. General Polish
-      - Consistent use of var(--transition-smooth) and var(--transition-fast)
-      - Improved typography with better line-height and letter-spacing
-      - Enhanced glassmorphism with stronger blur effects
-      - Better hover states across all interactive elements
-      - Added iOS Safari fixes with -webkit-overflow-scrolling
-      - Improved auth page and profile page styling
-      - Better fade-in animations with cubic-bezier easing
+    6. Accessibility & Contrast
+        - Text contrast: WCAG AA compliant (#f9e0e8 on dark backgrounds)
+        - Focus states: prominent with pink glow and border
+        - Status colors: Mint (#aaffa0) for online, Coral (#ff9aa2) for offline
+        - Clear visual hierarchy with pink accents
    
-   9. Mobile Experience
-      - Sidebar now properly overlays entire screen with dark backdrop
-      - Fixed horizontal overflow issues
-      - Optimized padding and spacing for mobile screens
-      - Better touch targets and button sizes
-      - Improved connection status positioning for mobile
+    7. Mobile Optimization
+        - All responsive breakpoints maintained
+        - Pink theme colors maintained across all screen sizes
+        - Reduced saturation approach (if needed) via rgba opacity
    
-   10. Visual Hierarchy
-       - Stronger shadows and depth throughout
-       - Better use of opacity for muted elements
-       - Enhanced color contrast for accessibility
-       - Improved focus states with prominent glow effects
+    MOOD & AESTHETIC:
+    Feminine, dreamy, modern, luxurious, slightly playful, professional & readable
+    Pink glassmorphism with strong depth, elegant dark backgrounds, glowing accents
    
    ============================================= */

@@ -165,6 +165,9 @@ if (!isset($_SESSION['user_id'])) {
             currentChatUserId: null,
             currentChatId: null,
             socket: null,
+            currentUserId: null,
+            onlineUsers: new Map(),
+            usersLoaded: false,
 
             init: function() {
                 console.log('Chat app initializing...');
@@ -172,6 +175,7 @@ if (!isset($_SESSION['user_id'])) {
                 try {
                     const user = JSON.parse(localStorage.getItem('user'));
                     if (user) {
+                        this.currentUserId = user.id != null ? String(user.id) : null;
                         document.getElementById('userName').textContent = user.username || 'User';
                         document.getElementById('userEmail').textContent = user.email || 'user@example.com';
                         document.getElementById('userAvatar').textContent = (user.username || 'U').charAt(0).toUpperCase();
@@ -209,19 +213,28 @@ if (!isset($_SESSION['user_id'])) {
                     usersList.innerHTML = '';
 
                     users.forEach((user) => {
+                        const userId = String(user.id);
+                        const isSelf = this.currentUserId && userId === this.currentUserId;
                         const item = document.createElement('div');
-                        item.className = 'user-item';
-                        item.dataset.userId = user.id;
+                        item.className = `user-item${isSelf ? ' self-user' : ''}`;
+                        item.dataset.userId = userId;
                         item.innerHTML = `
                             <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
                             <div>
                                 <div class="fw-bold">${user.username}</div>
-                                <small class="text-muted">Offline</small>
+                                <small class="text-muted">${isSelf ? 'You' : 'Offline'}</small>
                             </div>
                             <div class="user-status offline"></div>
                         `;
                         usersList.appendChild(item);
                     });
+
+                    this.applyOnlineSnapshot();
+                    this.usersLoaded = true;
+
+                    if (this.socket?.connected) {
+                        this.socket.emit('requestOnlineUsers');
+                    }
                 } catch (err) {
                     console.error('Failed to load users:', err);
                 }
@@ -425,9 +438,33 @@ if (!isset($_SESSION['user_id'])) {
                         reconnectionAttempts: 5
                     });
 
+                    this.socket.on('onlineUsers', (list) => {
+                        console.log('[presence] onlineUsers event:', list);
+                        const onlineList = Array.isArray(list) ? list.map((id) => String(id)) : [];
+                        this.onlineUsers = new Map();
+                        onlineList.forEach((id) => this.onlineUsers.set(id, true));
+                        this.applyOnlineSnapshot();
+                    });
+
+                    this.socket.on('userStatus', (data) => {
+                        console.log('[presence] userStatus event:', data);
+                        if (!data) return;
+                        const userId = String(data.userId);
+                        if (this.currentUserId && userId === this.currentUserId) return;
+
+                        const isOnline = data.status === 'online';
+                        this.onlineUsers.set(userId, isOnline);
+                        this.setUserStatus(userId, isOnline ? 'online' : 'offline');
+                    });
+
                     this.socket.on('connect', () => {
                         console.log('✓ WebSocket connected! Socket ID:', this.socket.id);
                         this.updateConnectionStatus('online');
+                        this.socket.emit('requestOnlineUsers');
+                        console.log('[presence] requestOnlineUsers emitted');
+                        if (this.usersLoaded) {
+                            this.applyOnlineSnapshot();
+                        }
                     });
 
                     this.socket.on('disconnect', () => {
@@ -456,6 +493,41 @@ if (!isset($_SESSION['user_id'])) {
                     // Don't crash the entire app if WebSocket fails
                     this.socket = null;
                 }
+            },
+
+            setUserStatus: function(userId, status) {
+                if (!userId) return;
+                const normalizedId = String(userId);
+                if (this.currentUserId && normalizedId === this.currentUserId) return;
+
+                const userItem = document.querySelector(`.user-item[data-user-id="${normalizedId}"]`);
+                if (!userItem) return;
+
+                const statusCircle = userItem.querySelector('.user-status');
+                const statusText = userItem.querySelector('.text-muted');
+
+                if (statusCircle) {
+                    statusCircle.className = `user-status ${status}`;
+                }
+
+                if (statusText) {
+                    if (status === 'online') {
+                        statusText.textContent = 'Online';
+                    } else if (status === 'offline' && statusText.textContent === 'Online') {
+                        statusText.textContent = 'Offline';
+                    }
+                }
+            },
+
+            applyOnlineSnapshot: function() {
+                const userItems = document.querySelectorAll('.user-item');
+                userItems.forEach((item) => {
+                    const userId = item.dataset.userId;
+                    if (this.currentUserId && String(userId) === this.currentUserId) return;
+
+                    const isOnline = this.onlineUsers.get(String(userId)) === true;
+                    this.setUserStatus(userId, isOnline ? 'online' : 'offline');
+                });
             },
 
             setupEventListeners: function() {

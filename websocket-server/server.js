@@ -17,6 +17,9 @@ const io = new Server(server, {
 // IMPORTANT: Must be 32+ chars for HS256 algorithm
 const JWT_SECRET = 'MiniChatApp_SecretKey_2025_v1_xyz';
 
+// Track online users (userId -> connection count)
+const onlineUsers = new Map();
+
 // Middleware to authenticate socket connections
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -47,34 +50,65 @@ app.get('/', (req, res) => {
 
 // When someone connects
 io.on('connection', (socket) => {
-  console.log('New client connected:', socket.user.id); // Now we have user.id from token
+  const userId = String(socket.user.id);
+  socket.data.userId = userId;
+  console.log('New client connected:', userId); // Now we have user.id from token
+
+  const currentCount = onlineUsers.get(userId) || 0;
+  onlineUsers.set(userId, currentCount + 1);
+
+  if (currentCount === 0) {
+    io.emit('userStatus', { userId, status: 'online' });
+  }
+
+  io.emit('onlineUsers', Array.from(onlineUsers.keys()));
+  console.log('[presence] onlineUsers broadcast (connect):', Array.from(onlineUsers.keys()));
 
   // Join user's personal room (for private notifications)
-  socket.join(`user_${socket.user.id}`);
+  socket.join(`user_${userId}`);
 
   // Listen for joining a chat room
   socket.on('join chat', (chatId) => {
     socket.join(`chat_${chatId}`);
-    console.log(`${socket.user.id} joined chat_${chatId}`);
+    console.log(`${userId} joined chat_${chatId}`);
   });
 
   // Listen for a message
   socket.on('chat message', (data) => {
     const { chatId, message } = data;
-    console.log(`Message in chat ${chatId} from ${socket.user.id}: ${message}`);
+    console.log(`Message in chat ${chatId} from ${userId}: ${message}`);
     
     // Broadcast to the specific chat room (only participants get it)
     io.to(`chat_${chatId}`).emit('chat message', {
       chatId,
-      senderId: socket.user.id,
+      senderId: userId,
       message,
       timestamp: new Date().toISOString()
     });
   });
 
+  socket.on('requestOnlineUsers', () => {
+    console.log('[presence] requestOnlineUsers from', userId);
+    socket.emit('onlineUsers', Array.from(onlineUsers.keys()));
+  });
+
   // Handle disconnect
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.user.id);
+    const storedUserId = socket.data.userId;
+    console.log('Client disconnected:', storedUserId);
+
+    if (!storedUserId) return;
+
+    const count = (onlineUsers.get(storedUserId) || 1) - 1;
+    if (count <= 0) {
+      onlineUsers.delete(storedUserId);
+      io.emit('userStatus', { userId: storedUserId, status: 'offline' });
+    } else {
+      onlineUsers.set(storedUserId, count);
+    }
+
+    io.emit('onlineUsers', Array.from(onlineUsers.keys()));
+    console.log('[presence] onlineUsers broadcast (disconnect):', Array.from(onlineUsers.keys()));
   });
 });
 
