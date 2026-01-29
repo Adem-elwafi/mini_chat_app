@@ -42,7 +42,7 @@ io.use((socket, next) => {
 
 // Basic route to check server is alive
 app.get('/', (req, res) => {
-  res.send('WebSocket server is running 🟢');
+  res.send('WebSocket server is running adem 🟢');
 });
 
 // When someone connects

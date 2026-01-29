@@ -65,7 +65,7 @@ if (!isset($_SESSION['user_id'])) {
                         <div class="user-avatar">JD</div>
                         <div>
                             <div class="fw-bold">John Doe</div>
-                            <small class="text-muted">Online</small>
+                            <small class="text-muted white">Online</small>
                         </div>
                         <div class="user-status online"></div>
                     </div>
@@ -134,17 +134,21 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                     
                     <!-- Conversation messages will be loaded here -->
-                    <div id="conversationMessages"></div>
+                    <div id="conversationMessages" class="Conversation-Messages"></div>
                 </div>
                 
                 <div class="message-input" style="display: none;" id="messageInput">
                     <form id="messageForm">
-                        <div class="d-flex">
+                        <div class="d-flex input-wrapper">
+                            <button type="button" class="btn emoji-toggle" id="emojiToggle" aria-label="Emoji picker">
+                                <i class="bi bi-emoji-smile"></i>
+                            </button>
                             <input type="text" placeholder="Type your message..." id="messageText" class="form-control">
                             <button type="submit" class="btn btn-send ms-2">
                                 <i class="bi bi-send-fill"></i>
                             </button>
                         </div>
+                        <div class="emoji-picker" id="emojiPicker" aria-hidden="true"></div>
                     </form>
                 </div>
             </div>
@@ -179,6 +183,7 @@ if (!isset($_SESSION['user_id'])) {
                 this.fetchUsers();
                 this.connectWebSocket();
                 this.setupEventListeners();
+                this.setupEmojiPicker();
                 this.setupResponsiveUI();
                 this.applyResponsiveSidebarLayout();
                 this.openSidebar(); // Start with sidebar open on all sizes
@@ -436,7 +441,13 @@ if (!isset($_SESSION['user_id'])) {
 
                     this.socket.on('chat message', (data) => {
                         if (this.currentChatId === data.chatId) {
-                            this.displayMessage(data.senderId, data.message, data.timestamp, 'received');
+                            const currentUser = JSON.parse(localStorage.getItem('user'));
+                            const currentUserId = currentUser?.id;
+                            
+                            // Don't display the message if it's from the current user (already displayed when sent)
+                            if (data.senderId != currentUserId) {
+                                this.displayMessage(data.senderId, data.message, data.timestamp, 'received');
+                            }
                         }
                     });
                 } catch (err) {
@@ -494,6 +505,70 @@ if (!isset($_SESSION['user_id'])) {
                 }
 
                 console.log('Event listeners setup complete');
+            },
+
+            setupEmojiPicker: function() {
+                const emojiToggle = document.getElementById('emojiToggle');
+                const emojiPicker = document.getElementById('emojiPicker');
+                const messageInput = document.getElementById('messageText');
+
+                if (!emojiToggle || !emojiPicker || !messageInput) return;
+
+                const emojis = [
+                    '😀','😁','😂','🤣','😊','😍','😘','😎','🤗','🤔',
+                    '🙌','👏','👍','👎','🙏','🔥','✨','🎉','💯','❤️',
+                    '😅','😇','😉','😋','😜','🤩','😢','😭','😡','🤯',
+                    '😴','🤝','🎯','🚀','💬','✅','❌','⭐','🌙','☀️'
+                ];
+
+                emojiPicker.innerHTML = emojis.map((emoji) => (
+                    `<button type="button" class="emoji-item" aria-label="${emoji}">${emoji}</button>`
+                )).join('');
+
+                const closePicker = () => {
+                    emojiPicker.classList.remove('open');
+                    emojiPicker.setAttribute('aria-hidden', 'true');
+                };
+
+                const openPicker = () => {
+                    emojiPicker.classList.add('open');
+                    emojiPicker.setAttribute('aria-hidden', 'false');
+                };
+
+                emojiToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (emojiPicker.classList.contains('open')) {
+                        closePicker();
+                    } else {
+                        openPicker();
+                    }
+                });
+
+                emojiPicker.addEventListener('click', (e) => {
+                    const target = e.target.closest('.emoji-item');
+                    if (!target) return;
+
+                    const emoji = target.textContent;
+                    const start = messageInput.selectionStart ?? messageInput.value.length;
+                    const end = messageInput.selectionEnd ?? messageInput.value.length;
+
+                    messageInput.value = messageInput.value.slice(0, start) + emoji + messageInput.value.slice(end);
+                    const newPos = start + emoji.length;
+                    messageInput.setSelectionRange(newPos, newPos);
+                    messageInput.focus();
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!emojiPicker.classList.contains('open')) return;
+                    if (emojiPicker.contains(e.target) || emojiToggle.contains(e.target)) return;
+                    closePicker();
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closePicker();
+                    }
+                });
             },
 
             selectUser: async function(userId, userElement) {

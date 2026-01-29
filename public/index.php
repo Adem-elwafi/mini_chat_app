@@ -136,10 +136,13 @@ if (isset($_SESSION['user_id'])) {
         }
         
         async function register() {
+            console.log('Register function called');
             const username = document.getElementById('regUsername').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value.trim();
             const profileInfo = document.getElementById('regProfile').value.trim();
+            
+            console.log('Form values:', {username, email, password: '***', profileInfo});
             
             // Basic validation
             if (!username || !email || !password) {
@@ -158,6 +161,7 @@ if (isset($_SESSION['user_id'])) {
             }
             
             try {
+                console.log('Sending fetch request to ../backend/auth/register.php');
                 const response = await fetch('../backend/auth/register.php', {
                     method: 'POST',
                     headers: {
@@ -171,9 +175,11 @@ if (isset($_SESSION['user_id'])) {
                     })
                 });
                 
+                console.log('Response received:', response.status, response.statusText);
                 const data = await response.json();
+                console.log('Response data:', data);
                 
-                if (data.success) {
+                if (response.ok && data.success) {
                     // Store user data in localStorage
                     localStorage.setItem('user', JSON.stringify(data.user));
                     // Show success message
@@ -185,8 +191,10 @@ if (isset($_SESSION['user_id'])) {
                 } else {
                     if (data.errors) {
                         showError(data.errors.join(', '));
+                    } else if (data.error) {
+                        showError(data.error);
                     } else {
-                        showError(data.error || 'Registration failed');
+                        showError('Registration failed. Status: ' + response.status);
                     }
                 }
             } catch (error) {
